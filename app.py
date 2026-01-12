@@ -4,25 +4,35 @@ import pandas as pd
 import joblib
 import os
 
-# Chargement des artefacts
-ARTIFACT_DIR = "churn_ann_artifacts_v2"
+# =========================
+# Chargement des fichiers
+# =========================
 
-preprocess = joblib.load(os.path.join(ARTIFACT_DIR, "preprocess.joblib"))
+# Répertoire racine du projet (là où se trouve app.py)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Détection du type de modèle
-model_path_h5 = os.path.join(ARTIFACT_DIR, "ann_model.h5")
-model_path_joblib = os.path.join(ARTIFACT_DIR, "mlp_model.joblib")
+PREPROCESS_PATH = os.path.join(BASE_DIR, "preprocess.joblib")
+MODEL_PATH = os.path.join(BASE_DIR, "mlp_model.joblib")
 
-use_tf = False
-if os.path.exists(model_path_h5):
-    import tensorflow as tf
-    model = tf.keras.models.load_model(model_path_h5)
-    use_tf = True
-else:
-    model = joblib.load(model_path_joblib)
+# Vérifications de sécurité (messages clairs côté Streamlit)
+if not os.path.exists(PREPROCESS_PATH):
+    st.error("❌ Fichier preprocess.joblib introuvable dans le dépôt.")
+    st.stop()
 
-# Interface
+if not os.path.exists(MODEL_PATH):
+    st.error("❌ Fichier mlp_model.joblib introuvable dans le dépôt.")
+    st.stop()
+
+# Chargement
+preprocess = joblib.load(PREPROCESS_PATH)
+model = joblib.load(MODEL_PATH)
+
+# =========================
+# Interface Streamlit
+# =========================
+
 st.set_page_config(page_title="Churn Client – Télécom", layout="centered")
+
 st.title("📊 Prédiction du churn client")
 st.markdown(
     "Cette application estime le **risque de résiliation** d’un client à partir de ses caractéristiques."
@@ -30,7 +40,10 @@ st.markdown(
 
 st.header("🧾 Informations client")
 
-# Formulaire
+# =========================
+# Formulaire utilisateur
+# =========================
+
 geography = st.selectbox("Pays", ["France", "Spain", "Germany"])
 gender = st.selectbox("Genre", ["Male", "Female"])
 age = st.slider("Âge", 18, 100, 40)
@@ -42,7 +55,10 @@ is_active = st.selectbox("Client actif", [0, 1])
 credit_score = st.slider("Score de crédit", 300, 900, 650)
 estimated_salary = st.number_input("Salaire estimé", min_value=0.0, value=60000.0)
 
-# Bouton de prédiction
+# =========================
+# Prédiction
+# =========================
+
 if st.button("🔍 Estimer le risque"):
     input_df = pd.DataFrame([{
         "CreditScore": credit_score,
@@ -57,6 +73,7 @@ if st.button("🔍 Estimer le risque"):
         "EstimatedSalary": estimated_salary
     }])
 
+    # Prétraitement
     X = preprocess.transform(input_df)
 
     try:
@@ -64,10 +81,8 @@ if st.button("🔍 Estimer le risque"):
     except Exception:
         pass
 
-    if use_tf:
-        proba = model.predict(X)[0][0]
-    else:
-        proba = model.predict_proba(X)[0][1]
+    # Prédiction (probabilité churn)
+    proba = model.predict_proba(X)[0][1]
 
     st.subheader("📈 Résultat")
     st.write(f"**Probabilité de churn : {proba:.2%}**")
