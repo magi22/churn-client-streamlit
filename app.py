@@ -50,8 +50,17 @@ age = st.slider("Âge", 18, 100, 40)
 tenure = st.slider("Ancienneté (années)", 0, 10, 5)
 balance = st.number_input("Solde du compte", min_value=0.0, value=50000.0)
 num_products = st.selectbox("Nombre de produits", [1, 2, 3, 4])
-has_cr_card = st.selectbox("Carte de crédit", [0, 1])
-is_active = st.selectbox("Client actif", [0, 1])
+has_cr_card = st.selectbox(
+    "Carte de crédit",
+    [0, 1],
+    help="0 = le client ne possède pas de carte de crédit | 1 = le client possède une carte de crédit"
+)
+
+is_active = st.selectbox(
+    "Client actif",
+    [0, 1],
+    help="0 = client peu ou pas actif | 1 = client actif (utilisation régulière des services)"
+)
 credit_score = st.slider("Score de crédit", 300, 900, 650)
 estimated_salary = st.number_input("Salaire estimé", min_value=0.0, value=60000.0)
 
@@ -91,3 +100,4 @@ if st.button("🔍 Estimer le risque"):
         st.error("⚠️ Client à risque de résiliation")
     else:
         st.success("✅ Client à faible risque")
+
